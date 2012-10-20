@@ -141,7 +141,6 @@ static int yuv_sensor_power_on(void)
   }
   msleep(5);
   for (i = 0; i < ARRAY_SIZE(yuv_sensor_gpio_keys); i++) {
-    tegra_gpio_enable(yuv_sensor_gpio_keys[i].gpio);
     pr_info("gpio %d set to %d\n",yuv_sensor_gpio_keys[i].gpio, yuv_sensor_gpio_keys[i].enabled);
     ret = gpio_request(yuv_sensor_gpio_keys[i].gpio,
     yuv_sensor_gpio_keys[i].name);
@@ -200,15 +199,14 @@ static int yuv_sensor_power_off(void)
   return 0;
 }
 
+#define FRONT_CAMERA_POWER_GPIO	TEGRA_GPIO_PK4
+#define FRONT_YUV_SENSOR_RST_GPIO     TEGRA_GPIO_PU3
+
 #if 0
 struct yuv_sensor_platform_data yuv_sensor_data = {
 	.power_on = yuv_sensor_power_on,
 	.power_off = yuv_sensor_power_off,
 };
-#endif
-
-#define FRONT_CAMERA_POWER_GPIO	TEGRA_GPIO_PK4
-#define FRONT_YUV_SENSOR_RST_GPIO     TEGRA_GPIO_PU3
 
 static struct camera_gpios yuv_front_sensor_gpio_keys[] = {
 	[0] = CAMERA_GPIO("mipi_power_en", AVDD_DSI_CSI_ENB_GPIO, 1, 0, GPIO_FREE),
@@ -247,7 +245,6 @@ static int yuv_front_sensor_power_on(void)
   }
 
   for (i = 0; i < ARRAY_SIZE(yuv_front_sensor_gpio_keys); i++) {
-    tegra_gpio_enable(yuv_front_sensor_gpio_keys[i].gpio);
     pr_info("gpio %d set to %d\n",yuv_front_sensor_gpio_keys[i].gpio,
       yuv_front_sensor_gpio_keys[i].enabled);
     ret = gpio_request(yuv_front_sensor_gpio_keys[i].gpio,
@@ -304,7 +301,6 @@ static int yuv_front_sensor_power_off(void)
   return 0;
 }
 
-#if 0
 struct yuv_sensor_platform_data yuv_front_sensor_data = {
 	.power_on = yuv_front_sensor_power_on,
 	.power_off = yuv_front_sensor_power_off,
@@ -313,21 +309,117 @@ struct yuv_sensor_platform_data yuv_front_sensor_data = {
 
 static void tf101_nct1008_init(void)
 {
-	tegra_gpio_enable(NCT1008_THERM2_GPIO);
 	gpio_request(NCT1008_THERM2_GPIO, "temp_alert");
 	gpio_direction_input(NCT1008_THERM2_GPIO);
 }
+
+static long tf101_shutdown_temp = 115000;
+static long tf101_throttle_temp = 90000;
+static long tf101_throttle_hysteresis = 3000;
+static struct nct1008_data *nct_data;
+
+static void tf101_thermal_alert(void *vdata)
+{
+	struct nct1008_data *data = vdata;
+	long temp;
+	long lo_limit, hi_limit;
+	bool is_above_throttle;
+	
+	nct1008_thermal_get_temp(data, &temp);
+	is_above_throttle = (temp >= tf101_throttle_temp);
+	
+	if (is_above_throttle != tegra_is_throttling())
+		tegra_throttling_enable(is_above_throttle);
+	
+	if (is_above_throttle) {
+		lo_limit = tf101_throttle_temp - tf101_throttle_hysteresis;
+		hi_limit = tf101_shutdown_temp;
+	} else {
+		lo_limit = 0;
+		hi_limit = tf101_throttle_temp;
+	}
+	
+	nct1008_thermal_set_limits(data, lo_limit, hi_limit);
+}
+
+static void nct1008_probe_callback(struct nct1008_data *data)
+{
+	nct_data = data;
+	nct1008_thermal_set_shutdown_temp(data, tf101_shutdown_temp);
+	nct1008_thermal_set_alert(data, tf101_thermal_alert, data);
+	nct1008_thermal_set_limits(data, 0, tf101_throttle_temp);
+}
+
+#ifdef CONFIG_DEBUG_FS
+static int tf101_thermal_get_throttle_temp(void *data, u64 *val)
+{
+	*val = (u64)tf101_throttle_temp;
+	return 0;
+}
+
+static int tf101_thermal_set_throttle_temp(void *data, u64 val)
+{
+	tf101_throttle_temp = val;
+	if (nct_data)
+		tf101_thermal_alert(nct_data);
+	
+	return 0;
+}
+
+DEFINE_SIMPLE_ATTRIBUTE(throttle_fops,
+						tf101_thermal_get_throttle_temp,
+						tf101_thermal_set_throttle_temp,
+						"%llu\n");
+
+static int tf101_thermal_get_shutdown_temp(void *data, u64 *val)
+{
+	*val = (u64)tf101_shutdown_temp;
+	return 0;
+}
+
+static int tf101_thermal_set_shutdown_temp(void *data, u64 val)
+{
+	tf101_shutdown_temp = val;
+	if (nct_data)
+		nct1008_thermal_set_shutdown_temp(nct_data,
+										  tf101_shutdown_temp);
+		
+		return 0;
+}
+
+DEFINE_SIMPLE_ATTRIBUTE(shutdown_fops,
+						tf101_thermal_get_shutdown_temp,
+						tf101_thermal_set_shutdown_temp,
+						"%llu\n");
+
+
+static int __init tf101_thermal_debug_init(void)
+{
+	struct dentry *thermal_debugfs_root;
+	
+	thermal_debugfs_root = debugfs_create_dir("thermal", 0);
+	
+	if (!debugfs_create_file("throttle", 0644, thermal_debugfs_root,
+		NULL, &throttle_fops))
+		return -ENOMEM;
+	
+	if (!debugfs_create_file("shutdown", 0644, thermal_debugfs_root,
+		NULL, &shutdown_fops))
+		return -ENOMEM;
+	
+	return 0;
+}
+
+late_initcall(tf101_thermal_debug_init);
+
+#endif
 
 static struct nct1008_platform_data tf101_nct1008_pdata = {
 	.supported_hwrev = true,
 	.ext_range = false,
 	.conv_rate = 0x08,
 	.offset = 0,
-	.hysteresis = 0,
-	.shutdown_ext_limit = 90,
-	.shutdown_local_limit = 96,
-	.throttling_ext_limit = 49,
-	.alarm_fn = tegra_throttling_enable,
+	.probe_callback = nct1008_probe_callback,
 };
 
 static const struct i2c_board_info tf101_i2c2_board_info[] = {
@@ -498,15 +590,12 @@ static struct i2c_board_info __initdata mpu3050_i2c0_boardinfo[] = {
 
 static void tf101_mpuirq_init(void)
 {
-	tegra_gpio_enable(TEGRA_GPIO_PZ4);
 	gpio_request(TEGRA_GPIO_PZ4, MPU_GYRO_NAME);
 	gpio_direction_input(TEGRA_GPIO_PZ4);
 
-	tegra_gpio_enable(TEGRA_GPIO_PN4);
 	gpio_request(TEGRA_GPIO_PN4, MPU_ACCEL_NAME);
 	gpio_direction_input(TEGRA_GPIO_PN4);
 
-	tegra_gpio_enable(TEGRA_GPIO_PN5);
 	gpio_request(TEGRA_GPIO_PN5, MPU_COMPASS_NAME);
 	gpio_direction_input(TEGRA_GPIO_PN5);
 }

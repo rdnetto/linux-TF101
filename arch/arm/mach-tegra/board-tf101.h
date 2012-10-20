@@ -2,6 +2,7 @@
  * arch/arm/mach-tegra/board-tf101.h
  *
  * Copyright (C) 2011 Google, Inc.
+ * Copyright (C) 2012 NVIDIA Corporation.
  *
  * This software is licensed under the terms of the GNU General Public
  * License version 2, as published by the Free Software Foundation, and
@@ -27,8 +28,11 @@ int tf101_panel_init(void);
 int tf101_sensors_init(void);
 int tf101_emc_init(void);
 int tf101_charger_init(void);
+int tf101_cam_fixed_voltage_regulator_init(void);
+
 
 /* external gpios */
+#define PANEL_POWER_EN_GPIO    TEGRA_GPIO_PC6
 
 /* TPS6586X gpios */
 #define TPS6586X_GPIO_BASE	TEGRA_NR_GPIOS
