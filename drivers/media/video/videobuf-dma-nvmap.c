@@ -21,8 +21,8 @@
 #include <linux/dma-mapping.h>
 #include <linux/sched.h>
 #include <linux/slab.h>
+#include <linux/nvmap.h>
 #include <media/videobuf-dma-nvmap.h>
-#include <mach/nvmap.h>
 
 static struct nvmap_client *nvmap_client = NULL;
 
@@ -242,7 +242,7 @@ static int __videobuf_iolock(struct videobuf_queue *q,
 		/* allocate memory for the read() method */
 		mem->size = PAGE_ALIGN(vb->size);
 
-		mem->nvmap_ref = nvmap_alloc(nvmap_client, mem->size, 32, NVMAP_HANDLE_CACHEABLE);
+		mem->nvmap_ref = nvmap_alloc(nvmap_client, mem->size, 32, NVMAP_HANDLE_CACHEABLE, 0);
 		if (!mem->nvmap_ref) {
 			dev_err(q->dev, "nvmap_alloc failed\n");
 			return -ENOMEM;
@@ -300,7 +300,7 @@ static int __videobuf_mmap_mapper(struct videobuf_queue *q,
 	MAGIC_CHECK(mem->magic, MAGIC_DC_MEM);
 
 	mem->size = PAGE_ALIGN(buf->bsize);
-	mem->nvmap_ref = nvmap_alloc(nvmap_client, mem->size, 32, NVMAP_HANDLE_CACHEABLE);
+	mem->nvmap_ref = nvmap_alloc(nvmap_client, mem->size, 32, NVMAP_HANDLE_CACHEABLE, 0);
 	if (!mem->nvmap_ref) {
 		dev_err(q->dev, "nvmap_alloc failed\n");
 		goto error;

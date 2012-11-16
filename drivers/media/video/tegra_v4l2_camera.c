@@ -22,6 +22,7 @@
 #include <media/videobuf-dma-nvmap.h>
 #include <media/tegra_v4l2_camera.h>
 
+#include "../../video/tegra/host/nvhost_acm.h"
 #include "../../video/tegra/host/dev.h"
 #include "../../video/tegra/host/host1x/host1x_syncpt.h"
 

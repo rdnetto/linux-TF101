@@ -24,8 +24,8 @@
 #include <linux/cdev.h>
 #include <linux/nvhost.h>
 
-#include "nvhost_syncpt.h"
-#include "nvhost_intr.h"
+#include "../nvhost_syncpt.h"
+#include "../nvhost_intr.h"
 
 #define TRACE_MAX_LENGTH	128U
 #define IFACE_NAME		"nvhost"
