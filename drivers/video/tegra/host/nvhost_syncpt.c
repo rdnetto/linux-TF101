@@ -93,6 +93,7 @@ u32 nvhost_syncpt_read(struct nvhost_syncpt *sp, u32 id)
 	nvhost_module_idle(syncpt_to_dev(sp)->dev);
 	return val;
 }
+EXPORT_SYMBOL(nvhost_syncpt_read);
 
 /**
  * Get the current syncpoint base
@@ -117,6 +118,7 @@ void nvhost_syncpt_cpu_incr(struct nvhost_syncpt *sp, u32 id)
 	BUG_ON(!syncpt_op().cpu_incr);
 	syncpt_op().cpu_incr(sp, id);
 }
+EXPORT_SYMBOL(nvhost_syncpt_cpu_incr);
 
 /**
  * Increment syncpoint value from cpu, updating cache
@@ -241,6 +243,7 @@ done:
 	nvhost_module_idle(syncpt_to_dev(sp)->dev);
 	return err;
 }
+EXPORT_SYMBOL(nvhost_syncpt_wait_timeout);
 
 /**
  * Returns true if syncpoint is expired, false if we may need to wait

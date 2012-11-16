@@ -206,6 +206,7 @@ void nvhost_module_busy(struct nvhost_device *dev)
 		to_state_running_locked(dev);
 	mutex_unlock(&dev->lock);
 }
+EXPORT_SYMBOL(nvhost_module_busy);
 
 static void powerstate_down_handler(struct work_struct *work)
 {
@@ -254,6 +255,7 @@ void nvhost_module_idle_mult(struct nvhost_device *dev, int refs)
 			drv->idle(dev);
 	}
 }
+EXPORT_SYMBOL(nvhost_module_idle_mult);
 
 int nvhost_module_get_rate(struct nvhost_device *dev, unsigned long *rate,
 		int index)

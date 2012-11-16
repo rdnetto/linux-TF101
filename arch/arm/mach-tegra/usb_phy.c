@@ -380,7 +380,7 @@ fail_io:
 
 	return ERR_PTR(err);
 }
-
+EXPORT_SYMBOL(tegra_usb_phy_open);
 
 
 void tegra_usb_phy_close(struct tegra_usb_phy *phy)
@@ -424,6 +424,7 @@ void tegra_usb_phy_close(struct tegra_usb_phy *phy)
 	kfree(phy->pdata);
 	kfree(phy);
 }
+EXPORT_SYMBOL(tegra_usb_phy_close);
 
 irqreturn_t tegra_usb_phy_irq(struct tegra_usb_phy *phy)
 {
@@ -448,6 +449,7 @@ int tegra_usb_phy_init(struct tegra_usb_phy *phy)
 
 	return status;
 }
+EXPORT_SYMBOL(tegra_usb_phy_init);
 
 int tegra_usb_phy_power_off(struct tegra_usb_phy *phy)
 {
@@ -493,6 +495,7 @@ int tegra_usb_phy_power_off(struct tegra_usb_phy *phy)
 
 	return err;
 }
+EXPORT_SYMBOL(tegra_usb_phy_power_off);
 
 int tegra_usb_phy_power_on(struct tegra_usb_phy *phy)
 {
@@ -537,6 +540,7 @@ int tegra_usb_phy_power_on(struct tegra_usb_phy *phy)
 
 	return status;
 }
+EXPORT_SYMBOL(tegra_usb_phy_power_on);
 
 int tegra_usb_phy_reset(struct tegra_usb_phy *phy)
 {
@@ -668,6 +672,7 @@ bool tegra_usb_phy_charger_detected(struct tegra_usb_phy *phy)
 
 	return status;
 }
+EXPORT_SYMBOL(tegra_usb_phy_charger_detected);
 
 bool tegra_usb_phy_hw_accessible(struct tegra_usb_phy *phy)
 {
@@ -687,11 +692,13 @@ bool tegra_usb_phy_has_hostpc(struct tegra_usb_phy *phy)
 {
 	return phy->pdata->has_hostpc;
 }
+EXPORT_SYMBOL(tegra_usb_phy_has_hostpc);
 
 bool tegra_usb_phy_otg_supported(struct tegra_usb_phy *phy)
 {
 	return phy->pdata->port_otg;
 }
+EXPORT_SYMBOL(tegra_usb_phy_otg_supported);
 
 void tegra_usb_phy_memory_prefetch_on(struct tegra_usb_phy *phy)
 {
@@ -707,6 +714,7 @@ void tegra_usb_phy_memory_prefetch_on(struct tegra_usb_phy *phy)
 		writel(val, ahb_gizmo + AHB_MEM_PREFETCH_CFG2);
 	}
 }
+EXPORT_SYMBOL(tegra_usb_phy_memory_prefetch_on);
 
 void tegra_usb_phy_memory_prefetch_off(struct tegra_usb_phy *phy)
 {
@@ -722,3 +730,4 @@ void tegra_usb_phy_memory_prefetch_off(struct tegra_usb_phy *phy)
 		writel(val, ahb_gizmo + AHB_MEM_PREFETCH_CFG2);
 	}
 }
+EXPORT_SYMBOL(tegra_usb_phy_memory_prefetch_off);
